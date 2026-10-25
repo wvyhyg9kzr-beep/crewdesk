@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Crew Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a work-order desk. Tabs on top (Today, Jobs, Editor, Settings); the editor pairs a form with the paper document. */
+:root{
+  --bg:#eef0ee; --panel:#ffffff; --ink:#1d2421; --muted:#5d6a64; --line:#d3dad5;
+  --accent:#1f6b4f; --accent-ink:#ffffff; --paper:#ffffff; --paper-ink:#1d2421;
+  --warn:#9a5b00; --warn-bg:#fff4dc; --bad:#a3342b; --good:#1f6b4f; --good-bg:#e3f2ea; --info-bg:#e8eef5; --info:#2c4f78;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a17; --panel:#1d2521; --ink:#e7ece9; --muted:#9aa8a1; --line:#33403a; --accent:#5fc79b; --accent-ink:#0d1a14; --paper:#f7f8f5; --paper-ink:#1d2421;
+  --warn:#e6a94a; --warn-bg:#3a2f17; --bad:#ef8a80; --good:#5fc79b; --good-bg:#17332a; --info-bg:#1a2a3d; --info:#8db6e6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a17; --panel:#1d2521; --ink:#e7ece9; --muted:#9aa8a1; --line:#33403a; --accent:#5fc79b; --accent-ink:#0d1a14; --paper:#f7f8f5; --paper-ink:#1d2421;
+  --warn:#e6a94a; --warn-bg:#3a2f17; --bad:#ef8a80; --good:#5fc79b; --good-bg:#17332a; --info-bg:#1a2a3d; --info:#8db6e6; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 48px}
+.wrap{max-width:1180px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:14px}
+h1{font:700 clamp(30px,5vw,42px)/1 var(--display);text-transform:uppercase;letter-spacing:.02em;margin:0}
+.sub{color:var(--muted);margin:4px 0 0}
+.plan{display:inline-block;font:600 12px var(--body);padding:3px 10px;border-radius:999px;background:var(--info-bg);color:var(--info);vertical-align:middle;margin-left:8px;letter-spacing:.04em;text-transform:uppercase}
+.plan.pro{background:var(--good-bg);color:var(--good)}
+nav.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+nav.tabs button{border:1px solid var(--line);background:var(--panel);color:var(--muted);font:600 14px var(--body);padding:9px 16px;border-radius:8px;cursor:pointer}
+nav.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.panel h2{font:700 20px/1 var(--display);text-transform:uppercase;letter-spacing:.04em;margin:0 0 12px;color:var(--accent)}
+.panel+.panel{margin-top:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.stat .k{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.stat .v{font:600 26px var(--mono);margin-top:2px}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:480px){.row{grid-template-columns:minmax(0,1fr)}}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+input,textarea,select{width:100%;font:15px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+textarea{resize:vertical;min-height:64px}
+.btn{font:600 15px var(--body);border-radius:8px;padding:10px 16px;cursor:pointer;border:1px solid var(--accent);background:none;color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.danger{border-color:var(--bad);color:var(--bad)}
+.btn.small{padding:6px 12px;font-size:13px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0}
+.msg{font-size:14px;margin-top:10px;min-height:20px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chips button{border:1px solid var(--line);background:var(--bg);color:var(--muted);font:600 13px var(--body);padding:6px 12px;border-radius:999px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.list{display:grid;gap:8px}
+.jrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.jrow .t{font-weight:600;overflow-wrap:anywhere}.jrow .s{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.jrow .amt{font:500 15px var(--mono)}
+@media(max-width:520px){.jrow{grid-template-columns:minmax(0,1fr) auto}.jrow .amt{grid-column:1;}}
+.pill{font:600 11px var(--body);text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:999px;background:var(--info-bg);color:var(--info);white-space:nowrap}
+.pill.sent{background:var(--warn-bg);color:var(--warn)}.pill.paid,.pill.done,.pill.accepted{background:var(--good-bg);color:var(--good)}.pill.lost{background:var(--line);color:var(--muted)}
+.fu{border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:12px;background:var(--bg);margin-bottom:10px}
+.fu .m{font-size:14px;margin:6px 0 10px;white-space:pre-line;overflow-wrap:anywhere}
+.empty{color:var(--muted);padding:6px 0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.items{display:grid;gap:8px}
+.item,.hd{display:grid;grid-template-columns:minmax(0,1fr) 64px 92px 28px;gap:8px;align-items:center}
+.hd{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.item .x{border:0;background:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+.item .x:hover{color:var(--bad)}
+.sticky{position:sticky;top:12px}
+.paper{background:var(--paper);color:var(--paper-ink);border-radius:4px;padding:26px 24px;box-shadow:0 2px 0 var(--line),0 12px 30px rgba(0,0,0,.14);font-size:13px;min-width:0}
+.paper .ptop{display:flex;justify-content:space-between;gap:14px;border-bottom:3px solid #1f6b4f;padding-bottom:12px;margin-bottom:14px}
+.paper .biz{font:700 22px/1.05 var(--display);text-transform:uppercase;overflow-wrap:anywhere}
+.paper .doc{font:700 22px/1 var(--display);text-transform:uppercase;color:#1f6b4f;text-align:right}
+.paper .meta{font:12px var(--mono);color:#4b5852;text-align:right;margin-top:4px}
+.paper .two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:14px}
+.paper .k{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5d6a64}
+.paper .v{overflow-wrap:anywhere;white-space:pre-line}
+.paper table{width:100%;border-collapse:collapse;margin-top:6px}
+.paper th{font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;color:#5d6a64;border-bottom:1px solid #c9d2cd;padding:6px 4px}
+.paper td{padding:7px 4px;border-bottom:1px solid #e3e8e5;vertical-align:top;overflow-wrap:anywhere}
+.paper .n{font-family:var(--mono);text-align:right;white-space:nowrap}
+.paper .tot{margin:12px 0 0 auto;width:min(260px,100%);font-family:var(--mono)}
+.paper .tot div{display:flex;justify-content:space-between;padding:3px 0}
+.paper .tot .g{font-weight:500;font-size:16px;border-top:2px solid #1d2421;margin-top:4px;padding-top:6px}
+.paper .nt{margin-top:14px;font-size:12px;color:#3b4742;white-space:pre-line;overflow-wrap:anywhere}
+.paper .ft{margin-top:16px;font-size:11px;color:#7a8680;border-top:1px solid #e3e8e5;padding-top:8px}
+.tag{display:inline-block;background:var(--warn-bg);color:var(--warn);font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;margin-bottom:10px}
+.lock{border:1px dashed var(--warn);background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:12px;margin-top:12px;font-size:14px}
+.lock a{color:inherit;font-weight:600}
+footer.pg{margin-top:26px;color:var(--muted);font-size:13px;text-align:center}
+footer.pg b{color:var(--ink);user-select:all}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Crew Desk<span class="plan" id="planTag">Free</span></h1>
+      <p class="sub">Quotes, invoices and follow-ups for lawn, snow and septic crews. Your data stays on this device.</p>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="Sections">
+    <button type="button" data-tab="today" aria-pressed="true">Today</button>
+    <button type="button" data-tab="jobs" aria-pressed="false">Jobs</button>
+    <button type="button" data-tab="edit" aria-pressed="false">Quote / invoice</button>
+    <button type="button" data-tab="settings" aria-pressed="false">Settings</button>
+  </nav>
+
+  <section id="vToday">
+    <div class="stats" id="stats"></div>
+    <div class="panel">
+      <h2>Follow up today</h2>
+      <div id="fuList"></div>
+    </div>
+  </section>
+
+  <section id="vJobs" hidden>
+    <div class="panel">
+      <h2>Jobs</h2>
+      <div class="chips" id="chips" role="group" aria-label="Filter by status"></div>
+      <div class="list" id="jobList"></div>
+      <div class="actions"><button class="btn primary" id="newJob" type="button">New quote</button></div>
+      <div class="msg" id="jobsMsg" role="status"></div>
+    </div>
+  </section>
+
+  <section id="vEdit" hidden>
+    <div class="grid">
+      <div>
+        <div class="panel">
+          <span class="tag" id="exTag" hidden>Example job. Change it or delete it.</span>
+          <h2>Customer and job</h2>
+          <div class="row">
+            <div><label for="cName">Customer name</label><input id="cName" autocomplete="off"></div>
+            <div><label for="cPhone">Customer phone</label><input id="cPhone" inputmode="tel" autocomplete="off"></div>
+            <div><label for="cEmail">Customer email</label><input id="cEmail" inputmode="email" autocomplete="off"></div>
+            <div><label for="cAddr">Job address</label><input id="cAddr" autocomplete="off"></div>
+            <div><label for="kind">Document</label><select id="kind"><option value="estimate">Estimate</option><option value="invoice">Invoice</option></select></div>
+            <div><label for="status">Status</label><select id="status"><option value="draft">Draft</option><option value="sent">Sent</option><option value="accepted">Accepted</option><option value="done">Work done</option><option value="paid">Paid</option><option value="lost">Lost</option></select></div>
+            <div><label for="dNum">Number</label><input id="dNum"></div>
+            <div><label for="dDate">Date</label><input id="dDate" type="date"></div>
+            <div><label for="trade">Start from a template</label><select id="trade"><option value="">Choose a trade</option><option value="lawn">Lawn care</option><option value="snow">Snow removal</option><option value="septic">Septic service</option><option value="blank">Blank</option></select></div>
+            <div><label for="dValid" id="validLbl">Good for (days)</label><input id="dValid" type="number" min="0" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>Work and materials</h2>
+          <div class="hd"><span>Description</span><span>Qty</span><span>Price</span><span></span></div>
+          <div class="items" id="items"></div>
+          <div class="actions"><button class="btn small" id="addItem" type="button">Add a line</button></div>
+          <div style="margin-top:14px"><label for="notes">Notes and terms</label><textarea id="notes"></textarea></div>
+          <p class="note">Template prices are placeholders. Replace them with your own rates.</p>
+        </div>
+      </div>
+      <div class="sticky">
+        <div class="paper" id="paper" aria-live="polite"></div>
+        <div class="actions">
+          <button class="btn primary" id="dl" type="button">Download PDF</button>
+          <button class="btn" id="toInv" type="button">Turn into invoice</button>
+          <button class="btn danger" id="del" type="button">Delete job</button>
+        </div>
+        <div class="msg" id="msg" role="status"></div>
+        <p class="note">Totals are plain arithmetic of what you enter. Check them before you send. Not tax or legal advice.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="vSettings" hidden>
+    <div class="panel">
+      <h2>Your business</h2>
+      <div class="row">
+        <div><label for="bName">Business name</label><input id="bName" autocomplete="organization"></div>
+        <div><label for="bPhone">Phone</label><input id="bPhone" autocomplete="tel"></div>
+        <div><label for="bEmail">Email</label><input id="bEmail" autocomplete="email"></div>
+        <div><label for="bAddr">City / address</label><input id="bAddr"></div>
+        <div><label for="bTax">Sales tax %</label><input id="bTax" type="number" min="0" step="0.001" inputmode="decimal"></div>
+        <div><label for="bFu">Follow up on quotes after (days)</label><input id="bFu" type="number" min="1" inputmode="numeric"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>Crew Desk Pro</h2>
+      <p id="proText" class="note" style="margin-top:0"></p>
+      <div class="row" id="licForm">
+        <div><label for="licEmail">Email you paid with</label><input id="licEmail" inputmode="email" autocomplete="email"></div>
+        <div><label for="licCode">Unlock code</label><input id="licCode" placeholder="CD-XXXX-XXXX-XXXX-XXXX" autocomplete="off"></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="licBtn" type="button">Unlock Pro</button>
+        <a class="btn" id="subLink" href="https://buy.stripe.com/7sYeVd1cQ1oU6Ub7gy5c407" target="_blank" rel="noopener" style="text-decoration:none">Subscribe, $12/month</a>
+      </div>
+      <div class="msg" id="licMsg" role="status"></div>
+      <p class="note">Free: up to 5 jobs, with a small credit line on documents. Pro: unlimited jobs and no credit line. After you pay, your unlock code is emailed within one business day.</p>
+    </div>
+    <div class="panel">
+      <h2>Backup</h2>
+      <p class="note" style="margin-top:0">Your jobs live in this browser only. Save a backup file now and then, and before you switch phones or clear your browser data.</p>
+      <div class="actions">
+        <button class="btn" id="bkSave" type="button">Save backup</button>
+        <button class="btn" id="bkLoad" type="button">Restore from backup</button>
+        <input type="file" id="bkFile" accept="application/json,.json" hidden>
+      </div>
+      <div class="msg" id="bkMsg" role="status"></div>
+    </div>
+  </section>
+
+  <footer class="pg">Need a one-page website for your trade? Email <b>scienceofyou50@gmail.com</b> for a free preview. Creation Sanction, 640 Elm Drive, Madison, WI 53706.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var KEY="crewdesk_v1", SALT="crewdesk-2026-pro", FREE_LIMIT=5;
+  var S=null, cur=null, tab="today", filter="all";
+  var TEMPLATES={
+    lawn:{notes:"Priced per visit. Weather can move your day by a day or two. Payment due within 14 days.",items:[["Mow, trim and blow off (per visit)",1,55],["Edging along beds and walks",1,20]]},
+    snow:{notes:"Service starts at 2 inches of snow. Priced per visit unless you sign up for a seasonal contract. Please mark hidden hazards before the first snowfall.",items:[["Driveway plow (per visit)",1,45],["Walks and steps shoveled and salted",1,25]]},
+    septic:{notes:"Final price depends on tank size and access. Digging out buried lids is billed separately. Payment due at time of service.",items:[["Pump septic tank (up to 1,000 gallons)",1,325],["Extra gallons over 1,000 (per 100 gal)",0,0],["Locate and uncover lids",0,0]]},
+    blank:{notes:"",items:[["",1,""]]}
+  };
+  function today(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+  function money(n){return "$"+(Math.round(n*100)/100).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+  function daysBetween(a,b){if(!a||!b)return 0;var x=new Date(a+"T00:00:00"),y=new Date(b+"T00:00:00");return Math.round((y-x)/86400000)}
+  function fmtDate(s){if(!s)return "";var p=s.split("-");return p.length===3?p[1]+"/"+p[2]+"/"+p[0]:s}
+  function uid(){return "j"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+  function hash(str,seed){var h=seed>>>0;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h}
+  function hex8(n){return ("00000000"+n.toString(16)).slice(-8).toUpperCase()}
+  function codeFor(email){var s=SALT+"|"+String(email||"").trim().toLowerCase(),a=hex8(hash(s,2166136261))+hex8(hash(s,0x9E3779B9)),g=a.match(/.{4}/g);return "CD-"+g.join("-")}
+  function isPro(){return !!(S&&S.lic&&S.lic.email&&S.lic.code&&codeFor(S.lic.email)===S.lic.code.trim().toUpperCase())}
+  function defaults(){return {biz:{n:"",p:"",e:"",a:"",tax:"",fu:3},jobs:[],next:1001,lic:null,seeded:false}}
+  function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.jobs)return o}}catch(e){}return defaults()}
+  function persist(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function realCount(){return S.jobs.filter(function(j){return !j.example}).length}
+  function find(id){for(var i=0;i<S.jobs.length;i++)if(S.jobs[i].id===id)return S.jobs[i];return null}
+  function total(j){var sub=0;(j.items||[]).forEach(function(it){sub+=(parseFloat(it.q)||0)*(parseFloat(it.p)||0)});var t=parseFloat(S.biz.tax)||0,tx=Math.round(sub*t)/100;return {sub:sub,tax:tx,total:sub+tx,rate:t}}
+  function seed(){
+    S.jobs.push({id:uid(),example:true,num:"1001",kind:"estimate",status:"sent",cName:"Pat Sample",cPhone:"555-010-0142",cEmail:"pat@example.com",cAddr:"123 Maple St, Anytown, MN",
+      items:[{d:"Pump septic tank (up to 1,000 gallons)",q:1,p:325},{d:"Locate and uncover lids",q:1,p:60}],notes:TEMPLATES.septic.notes,date:addDays(today(),-5),sentOn:addDays(today(),-5),followedOn:"",paidOn:"",valid:30});
+    S.seeded=true;S.next=1002;persist();
+  }
+  function addDays(s,n){var d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+  function newJob(){
+    if(!isPro()&&realCount()>=FREE_LIMIT){go("jobs");$("jobsMsg").textContent="You have reached the free limit of "+FREE_LIMIT+" jobs. Unlock Pro in Settings, or delete an old job.";return null}
+    var j={id:uid(),num:String(S.next++),kind:"estimate",status:"draft",cName:"",cPhone:"",cEmail:"",cAddr:"",items:[{d:"",q:1,p:""}],notes:"",date:today(),sentOn:"",followedOn:"",paidOn:"",valid:30};
+    S.jobs.unshift(j);persist();return j;
+  }
+  function firstName(j){return (j.cName||"").trim().split(/\s+/)[0]||"there"}
+  function bizName(){return S.biz.n||"your contractor"}
+  function followText(j){
+    var T=total(j);
+    if(j.kind==="invoice")return "Hi "+firstName(j)+", this is "+bizName()+". A friendly reminder that invoice #"+j.num+" for "+money(T.total)+" is still open. Let me know if you need anything from me. Thank you!"+(S.biz.p?"\n"+S.biz.p:"");
+    return "Hi "+firstName(j)+", this is "+bizName()+". Just checking in on the estimate I sent for "+(j.cAddr||"your property")+" ("+money(T.total)+"). Happy to answer questions or adjust it. Thanks!"+(S.biz.p?"\n"+S.biz.p:"");
+  }
+  function dueFollowups(){
+    var t=today(),gap=parseInt(S.biz.fu,10)||3;
+    return S.jobs.filter(function(j){
+      if(j.status!=="sent")return false;
+      var base=j.kind==="invoice"?Math.max(gap,7):gap, since=daysBetween(j.sentOn||j.date,t);
+      if(since<base)return false;
+      return !j.followedOn||daysBetween(j.followedOn,t)>=4;
+    });
+  }
+  /* ---------- views ---------- */
+  function go(t){
+    tab=t;["today","jobs","edit","settings"].forEach(function(k){var v=$("v"+k.charAt(0).toUpperCase()+k.slice(1));if(v)v.hidden=(k!==t)});
+    Array.prototype.forEach.call($("tabs").querySelectorAll("button"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-tab")===t)});
+    if(t==="today")renderToday();if(t==="jobs")renderJobs();if(t==="settings")renderSettings();if(t==="edit")loadEditor();
+  }
+  function openJob(id){cur=find(id);go("edit")}
+  function renderPlan(){var p=isPro();$("planTag").textContent=p?"Pro":"Free";$("planTag").className="plan"+(p?" pro":"")}
+  function renderToday(){
+    var open=0,unpaid=0,paidMonth=0,m=today().slice(0,7);
+    S.jobs.forEach(function(j){var t=total(j).total;
+      if(j.kind==="estimate"&&(j.status==="draft"||j.status==="sent"))open+=t;
+      if(j.kind==="invoice"&&j.status!=="paid"&&j.status!=="lost")unpaid+=t;
+      if(j.status==="paid"&&(j.paidOn||"").slice(0,7)===m)paidMonth+=t});
+    $("stats").innerHTML='<div class="stat"><div class="k">Open quotes</div><div class="v">'+money(open)+'</div></div><div class="stat"><div class="k">Unpaid invoices</div><div class="v">'+money(unpaid)+'</div></div><div class="stat"><div class="k">Paid this month</div><div class="v">'+money(paidMonth)+'</div></div>';
+    var due=dueFollowups(),box=$("fuList");box.innerHTML="";
+    if(!due.length){box.innerHTML='<div class="empty">Nothing to chase today. Quotes you mark as Sent show up here after '+(parseInt(S.biz.fu,10)||3)+' days with no answer.</div>';return}
+    due.forEach(function(j){
+      var d=document.createElement("div");d.className="fu";
+      d.innerHTML='<strong>'+esc(j.cName||"Customer")+'</strong> <span class="pill sent">'+esc(j.kind)+' #'+esc(j.num)+' · '+money(total(j).total)+'</span><div class="m"></div><div class="actions" style="margin-top:0"><button class="btn small primary" data-a="copy">Copy text</button><button class="btn small" data-a="done">Mark followed up</button><button class="btn small" data-a="open">Open job</button></div>';
+      d.querySelector(".m").textContent=followText(j);
+      d.querySelector('[data-a="copy"]').addEventListener("click",function(ev){copyText(followText(j),ev.target)});
+      d.querySelector('[data-a="done"]').addEventListener("click",function(){j.followedOn=today();persist();renderToday()});
+      d.querySelector('[data-a="open"]').addEventListener("click",function(){openJob(j.id)});
+      box.appendChild(d);
+    });
+  }
+  function copyText(t,btn){
+    var ok=function(){var o=btn.textContent;btn.textContent="Copied";setTimeout(function(){btn.textContent=o},1400)};
+    try{navigator.clipboard.writeText(t).then(ok,function(){fallbackCopy(t,ok)})}catch(e){fallbackCopy(t,ok)}
+  }
+  function fallbackCopy(t,ok){var a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");ok()}catch(e){}document.body.removeChild(a)}
+  var STATUSES=[["all","All"],["draft","Draft"],["sent","Sent"],["accepted","Accepted"],["done","Work done"],["paid","Paid"],["lost","Lost"]];
+  function renderJobs(){
+    var c=$("chips");c.innerHTML="";
+    STATUSES.forEach(function(s){var b=document.createElement("button");b.type="button";b.textContent=s[1];b.setAttribute("aria-pressed",filter===s[0]);b.addEventListener("click",function(){filter=s[0];renderJobs()});c.appendChild(b)});
+    var box=$("jobList");box.innerHTML="";
+    var list=S.jobs.filter(function(j){return filter==="all"||j.status===filter});
+    if(!list.length){box.innerHTML='<div class="empty">No jobs here yet. Tap New quote to start one.</div>';return}
+    list.forEach(function(j){
+      var r=document.createElement("div");r.className="jrow";r.style.cursor="pointer";r.tabIndex=0;r.setAttribute("role","button");
+      r.innerHTML='<div><div class="t">'+esc(j.cName||"Unnamed customer")+(j.example?' (example)':"")+'</div><div class="s">'+esc(j.kind)+' #'+esc(j.num)+' · '+esc(fmtDate(j.date))+(j.cAddr?' · '+esc(j.cAddr):"")+'</div></div><span class="pill '+esc(j.status)+'">'+esc(j.status)+'</span><span class="amt">'+money(total(j).total)+'</span>';
+      r.addEventListener("click",function(){openJob(j.id)});
+      r.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();openJob(j.id)}});
+      box.appendChild(r);
+    });
+  }
+  function renderSettings(){
+    var b=S.biz;$("bName").value=b.n||"";$("bPhone").value=b.p||"";$("bEmail").value=b.e||"";$("bAddr").value=b.a||"";$("bTax").value=b.tax||"";$("bFu").value=b.fu||3;
+    if(S.lic){$("licEmail").value=S.lic.email||"";$("licCode").value=S.lic.code||""}
+    $("proText").textContent=isPro()?"Pro is unlocked on this device. Thank you!":"You are on the free plan ("+realCount()+" of "+FREE_LIMIT+" jobs used). Pro is $12/month and removes the job limit and the credit line.";
+    renderPlan();
+  }
+  /* ---------- editor ---------- */
+  function loadEditor(){
+    if(!cur){cur=S.jobs[0]||newJob();if(!cur){go("jobs");return}}
+    var j=cur;
+    $("exTag").hidden=!j.example;
+    $("cName").value=j.cName;$("cPhone").value=j.cPhone;$("cEmail").value=j.cEmail;$("cAddr").value=j.cAddr;
+    $("kind").value=j.kind;$("status").value=j.status;$("dNum").value=j.num;$("dDate").value=j.date;$("dValid").value=j.valid;$("notes").value=j.notes;$("trade").value="";
+    renderItems();renderPaper();$("msg").textContent="";
+  }
+  function renderItems(){
+    var box=$("items");box.innerHTML="";
+    cur.items.forEach(function(it,i){
+      var r=document.createElement("div");r.className="item";
+      r.innerHTML='<input aria-label="Description line '+(i+1)+'" value="'+esc(it.d)+'"><input aria-label="Quantity line '+(i+1)+'" type="number" min="0" step="any" inputmode="decimal" value="'+esc(it.q)+'"><input aria-label="Price line '+(i+1)+'" type="number" min="0" step="0.01" inputmode="decimal" value="'+esc(it.p)+'"><button class="x" type="button" aria-label="Remove line '+(i+1)+'">&times;</button>';
+      var ins=r.querySelectorAll("input");
+      ins[0].addEventListener("input",function(){it.d=ins[0].value;edited()});
+      ins[1].addEventListener("input",function(){it.q=ins[1].value;edited()});
+      ins[2].addEventListener("input",function(){it.p=ins[2].value;edited()});
+      r.querySelector(".x").addEventListener("click",function(){cur.items.splice(i,1);renderItems();edited()});
+      box.appendChild(r);
+    });
+  }
+  function edited(){
+    var j=cur;if(!j)return;
+    j.cName=$("cName").value;j.cPhone=$("cPhone").value;j.cEmail=$("cEmail").value;j.cAddr=$("cAddr").value;
+    j.num=$("dNum").value;j.date=$("dDate").value;j.valid=$("dValid").value;j.notes=$("notes").value;
+    if(j.example){j.example=false;$("exTag").hidden=true}
+    persist();renderPaper();
+  }
+  function renderPaper(){
+    var j=cur,T=total(j),kind=j.kind,v=parseInt(j.valid,10);
+    $("validLbl").textContent=kind==="estimate"?"Good for (days)":"Due in (days)";
+    var due=kind==="estimate"?(v>0?"Good for "+v+" days":""):(String(j.valid)!==""&&v>=0?"Due in "+v+" days":"");
+    var rows=j.items.filter(function(it){return it.d||it.p||it.q}).map(function(it){var a=(parseFloat(it.q)||0)*(parseFloat(it.p)||0);
+      return "<tr><td>"+esc(it.d)+'</td><td class="n">'+esc(it.q)+'</td><td class="n">'+money(parseFloat(it.p)||0)+'</td><td class="n">'+money(a)+"</td></tr>"}).join("");
+    var B=S.biz;
+    $("paper").innerHTML=
+      '<div class="ptop"><div><div class="biz">'+esc(B.n||"Your business")+'</div><div class="v">'+esc([B.p,B.e,B.a].filter(Boolean).join("\n"))+'</div></div>'+
+      '<div><div class="doc">'+(kind==="estimate"?"Estimate":"Invoice")+'</div><div class="meta">No. '+esc(j.num)+'<br>'+esc(fmtDate(j.date))+(due?'<br>'+esc(due):"")+'</div></div></div>'+
+      '<div class="two"><div><div class="k">Prepared for</div><div class="v">'+esc([j.cName,j.cPhone,j.cEmail].filter(Boolean).join("\n"))+'</div></div><div><div class="k">Job address</div><div class="v">'+esc(j.cAddr)+'</div></div></div>'+
+      '<table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Price</th><th class="n">Amount</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div class="tot"><div><span>Subtotal</span><span>'+money(T.sub)+'</span></div>'+(T.rate?'<div><span>Tax '+T.rate+'%</span><span>'+money(T.tax)+'</span></div>':"")+'<div class="g"><span>'+(kind==="estimate"?"Estimated total":"Total due")+'</span><span>'+money(T.total)+'</span></div></div>'+
+      (j.notes?'<div class="nt">'+esc(j.notes)+'</div>':"")+
+      (isPro()?"":'<div class="ft">Made with Crew Desk by Creation Sanction</div>');
+  }
+  ["cName","cPhone","cEmail","cAddr","dNum","dDate","dValid","notes"].forEach(function(k){$(k).addEventListener("input",edited)});
+  $("kind").addEventListener("change",function(){cur.kind=$("kind").value;if(cur.kind==="invoice"&&cur.valid==30)cur.valid=14;if(cur.kind==="estimate"&&cur.valid==14)cur.valid=30;$("dValid").value=cur.valid;edited()});
+  $("status").addEventListener("change",function(){
+    var s=$("status").value;cur.status=s;
+    if(s==="sent"&&!cur.sentOn){cur.sentOn=today();cur.followedOn=""}
+    if(s==="paid")cur.paidOn=today();
+    if(cur.example){cur.example=false;$("exTag").hidden=true}
+    persist();renderPaper();
+  });
+  $("trade").addEventListener("change",function(){
+    var t=TEMPLATES[$("trade").value];if(!t)return;
+    cur.items=t.items.map(function(x){return {d:x[0],q:x[1],p:x[2]}});cur.notes=t.notes;$("notes").value=t.notes;renderItems();edited();
+  });
+  $("addItem").addEventListener("click",function(){cur.items.push({d:"",q:1,p:""});renderItems();edited();var ins=$("items").querySelectorAll(".item");if(ins.length)ins[ins.length-1].querySelector("input").focus()});
+  $("toInv").addEventListener("click",function(){cur.kind="invoice";cur.valid=14;cur.status="sent";cur.sentOn=today();cur.followedOn="";cur.date=today();loadEditor();edited();$("msg").textContent="Turned into an invoice and marked Sent."});
+  var delArmed=false;
+  $("del").addEventListener("click",function(){
+    if(!delArmed){delArmed=true;$("del").textContent="Tap again to delete";setTimeout(function(){delArmed=false;$("del").textContent="Delete job"},3000);return}
+    delArmed=false;$("del").textContent="Delete job";
+    S.jobs=S.jobs.filter(function(x){return x!==cur});cur=null;persist();go("jobs");
+  });
+  /* ---------- PDF + file saving ---------- */
+  function say(t){$("msg").textContent=t}
+  async function saveFile(name,data,mime){
+    try{if(window.claude&&claude.use){var d=await claude.use("downloads");if(d){await d.save({filename:name,data:data});return true}}}catch(e){if(e&&e.code==="declined")return "declined"}
+    try{var blob=new Blob([data],{type:mime}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(function(){URL.revokeObjectURL(a.href)},2000);return true}catch(e){return false}
+  }
+  $("dl").addEventListener("click",async function(){
+    var J=window.jspdf&&window.jspdf.jsPDF;if(!J){say("The PDF maker did not load. Check your connection and reload.");return}
+    var j=cur,B=S.biz,T=total(j),kind=j.kind,doc=new J({unit:"pt",format:"letter"}),W=612,M=48,y=56,G=[31,107,79],K=[29,36,33],Mu=[93,106,100];
+    var lbl=kind==="estimate"?"Estimate":"Invoice";
+    doc.setFont("helvetica","bold");doc.setFontSize(20);doc.setTextColor(K[0],K[1],K[2]);doc.text((B.n||"Your business").toUpperCase(),M,y);
+    doc.setTextColor(G[0],G[1],G[2]);doc.text(lbl.toUpperCase(),W-M,y,{align:"right"});
+    doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(Mu[0],Mu[1],Mu[2]);
+    var yy=y+16;[B.p,B.e,B.a].filter(Boolean).forEach(function(l){doc.text(l,M,yy);yy+=13});
+    var v=parseInt(j.valid,10),due=kind==="estimate"?(v>0?"Good for "+v+" days":""):(String(j.valid)!==""&&v>=0?"Due in "+v+" days":"");
+    var my=y+16;["No. "+j.num,fmtDate(j.date),due].filter(Boolean).forEach(function(l){doc.text(l,W-M,my,{align:"right"});my+=13});
+    y=Math.max(yy,my)+8;doc.setDrawColor(G[0],G[1],G[2]);doc.setLineWidth(2);doc.line(M,y,W-M,y);y+=24;
+    doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(Mu[0],Mu[1],Mu[2]);doc.text("PREPARED FOR",M,y);doc.text("JOB ADDRESS",W/2+10,y);y+=13;
+    doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(K[0],K[1],K[2]);
+    var cl=[j.cName,j.cPhone,j.cEmail].filter(Boolean);cl.forEach(function(l,i){doc.text(l,M,y+i*14)});
+    var al=doc.splitTextToSize(j.cAddr||"",W/2-M-10);doc.text(al,W/2+10,y);y+=Math.max(cl.length,al.length,1)*14+16;
+    doc.setFontSize(8);doc.setFont("helvetica","bold");doc.setTextColor(Mu[0],Mu[1],Mu[2]);
+    doc.text("DESCRIPTION",M,y);doc.text("QTY",340,y,{align:"right"});doc.text("PRICE",440,y,{align:"right"});doc.text("AMOUNT",W-M,y,{align:"right"});
+    y+=6;doc.setDrawColor(200,210,204);doc.setLineWidth(.75);doc.line(M,y,W-M,y);y+=16;
+    doc.setFont("helvetica","normal");doc.setFontSize(11);doc.setTextColor(K[0],K[1],K[2]);
+    j.items.filter(function(it){return it.d||it.p||it.q}).forEach(function(it){
+      var lines=doc.splitTextToSize(it.d||"",260),a=(parseFloat(it.q)||0)*(parseFloat(it.p)||0),h=lines.length*14;
+      if(y+h>700){doc.addPage();y=56}
+      doc.text(lines,M,y);doc.text(String(it.q||""),340,y,{align:"right"});doc.text(money(parseFloat(it.p)||0),440,y,{align:"right"});doc.text(money(a),W-M,y,{align:"right"});
+      y+=h+6;doc.setDrawColor(230,234,231);doc.line(M,y-8,W-M,y-8)});
+    y+=10;if(y>650){doc.addPage();y=56}
+    doc.text("Subtotal",380,y);doc.text(money(T.sub),W-M,y,{align:"right"});y+=16;
+    if(T.rate){doc.text("Tax "+T.rate+"%",380,y);doc.text(money(T.tax),W-M,y,{align:"right"});y+=16}
+    doc.setDrawColor(29,36,33);doc.setLineWidth(1.5);doc.line(380,y-8,W-M,y-8);y+=6;
+    doc.setFont("helvetica","bold");doc.setFontSize(13);doc.text(kind==="estimate"?"Estimated total":"Total due",380,y);doc.text(money(T.total),W-M,y,{align:"right"});y+=30;
+    if(j.notes){doc.setFont("helvetica","normal");doc.setFontSize(10);doc.setTextColor(60,71,66);var nl=doc.splitTextToSize(j.notes,W-2*M);if(y+nl.length*13>740){doc.addPage();y=56}doc.text(nl,M,y)}
+    if(!isPro()){doc.setFontSize(8);doc.setTextColor(122,134,128);doc.text("Made with Crew Desk by Creation Sanction",M,760)}
+    var name=(lbl+"-"+(j.num||"draft")+"-"+(j.cName||"customer")).replace(/[^A-Za-z0-9_-]+/g,"-").replace(/-+/g,"-")+".pdf";
+    var r=await saveFile(name,doc.output("arraybuffer"),"application/pdf");
+    say(r===true?"Saved "+name+".":r==="declined"?"Save cancelled.":"The PDF could not be saved here. Open Crew Desk in your phone or computer browser and try again.");
+  });
+  /* ---------- settings ---------- */
+  [["bName","n"],["bPhone","p"],["bEmail","e"],["bAddr","a"],["bTax","tax"],["bFu","fu"]].forEach(function(p){$(p[0]).addEventListener("input",function(){S.biz[p[1]]=$(p[0]).value;persist()})});
+  $("licBtn").addEventListener("click",function(){
+    var em=$("licEmail").value.trim(),cd=$("licCode").value.trim().toUpperCase();
+    if(em&&cd&&codeFor(em)===cd){S.lic={email:em,code:cd};persist();$("licMsg").textContent="Pro unlocked on this device. Thank you!";renderSettings()}
+    else $("licMsg").textContent="That email and code do not match. Use the exact email you paid with, or write to scienceofyou50@gmail.com.";
+  });
+  $("bkSave").addEventListener("click",async function(){
+    var r=await saveFile("crew-desk-backup-"+today()+".json",new TextEncoder().encode(JSON.stringify(S)),"application/json");
+    $("bkMsg").textContent=r===true?"Backup saved.":r==="declined"?"Save cancelled.":"Could not save here. Open Crew Desk in a regular browser to save a backup."
+  });
+  $("bkLoad").addEventListener("click",function(){$("bkFile").click()});
+  $("bkFile").addEventListener("change",function(){
+    var f=$("bkFile").files[0];if(!f)return;var fr=new FileReader();
+    fr.onload=function(){try{var o=JSON.parse(fr.result);if(!o||!o.jobs||!o.biz)throw 0;S=o;cur=null;persist();renderSettings();renderPlan();$("bkMsg").textContent="Backup restored: "+S.jobs.length+" jobs."}catch(e){$("bkMsg").textContent="That file is not a Crew Desk backup."}};
+    fr.readAsText(f);$("bkFile").value="";
+  });
+  $("newJob").addEventListener("click",function(){var j=newJob();if(j){cur=j;go("edit")}});
+  Array.prototype.forEach.call($("tabs").querySelectorAll("button"),function(b){b.addEventListener("click",function(){var t=b.getAttribute("data-tab");if(t==="edit"&&!cur)cur=S.jobs[0]||null;go(t)})});
+  S=load();if(!S.seeded&&!S.jobs.length)seed();
+  renderPlan();go("today");
+})();
+</script>
+
+</body></html>
